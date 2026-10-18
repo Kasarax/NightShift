@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>GRAYHAVEN: AZ UTOLSÓ 12 ÓRA — DEMO</title>
+<style>
+  :root {
+    --bg-color: #000000;
+    --text-story: #00ff66;
+    --text-blue: #00bfff;
+    --panel-bg: #0a0a0a;
+  }
+  
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-story);
+    font-family: 'Courier New', Courier, monospace, sans-serif;
+    margin: 0;
+    padding: 20px;
+    line-height: 1.6;
+  }
+
+  #app {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .main-title {
+    color: var(--text-blue);
+    text-align: center;
+    border-bottom: 2px solid var(--text-blue);
+    padding-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 20px;
+  }
+
+  .rules-card {
+    background-color: var(--panel-bg);
+    border: 1px solid var(--text-blue);
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 0 10px rgba(0, 191, 255, 0.2);
+  }
+
+  .toggle-rules-btn {
+    background: transparent;
+    border: 1px solid var(--text-blue);
+    color: var(--text-blue);
+    padding: 8px 12px;
+    cursor: pointer;
+    font-family: inherit;
+    border-radius: 4px;
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .toggle-rules-btn:hover {
+    background-color: var(--text-blue);
+    color: var(--bg-color);
+  }
+
+  .rules-content {
+    display: none;
+    margin-top: 15px;
+  }
+
+  .chapter-card {
+    display: none; /* Alapértelmezetten minden fejezet rejtett */
+    background-color: var(--panel-bg);
+    border: 1px solid var(--text-blue);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 0 10px rgba(0, 191, 255, 0.2);
+  }
+
+  .chapter-card.active {
+    display: block; /* Csak az aktív fejezet jelenik meg */
+  }
+
+  .chapter-title {
+    color: var(--text-blue);
+    font-size: 1.4em;
+    font-weight: bold;
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px dashed var(--text-blue);
+    padding-bottom: 5px;
+    text-transform: uppercase;
+  }
+
+  .story-text {
+    color: var(--text-story);
+    white-space: pre-line;
+    margin-bottom: 15px;
+  }
+
+  .loot {
+    color: var(--text-blue);
+    font-weight: bold;
+    background-color: rgba(0, 191, 255, 0.1);
+    padding: 8px 12px;
+    border-left: 3px solid var(--text-blue);
+    margin: 10px 0;
+    white-space: pre-line;
+  }
+
+  .choices {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .choice-btn {
+    background: transparent;
+    border: 1px solid var(--text-blue);
+    color: var(--text-blue);
+    padding: 10px 15px;
+    text-align: left;
+    font-family: inherit;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 4px;
+    line-height: 1.4;
+  }
+
+  .choice-btn:hover {
+    background-color: var(--text-blue);
+    color: var(--bg-color);
+    font-weight: bold;
+  }
+
+  /* ===== automatizált mechanika ===== */
+  body.has-hud { padding-top: 92px; }
+  #hud { display:none; position:fixed; top:0; left:0; right:0; z-index:50; background:#050505; border-bottom:2px solid var(--text-blue);
+    padding:8px 12px; flex-wrap:wrap; gap:6px 16px; align-items:center; font-size:.9em; }
+  #hud .box { color:var(--text-blue); white-space:nowrap; }
+  #hud b { color:var(--text-story); }
+  #hud .low b { color:#ff4444; } #hud .high b { color:#ff9933; }
+  #hud #h-items { color:#aaa; font-size:.85em; flex-basis:100%; }
+  #btn-new { background:transparent; border:1px solid #666; color:#999; font-family:inherit; border-radius:4px; padding:2px 8px; cursor:pointer; margin-left:auto; }
+  #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(30px); background:#111; border:1px solid var(--text-blue);
+    color:var(--text-story); padding:10px 18px; border-radius:6px; opacity:0; transition:all .3s; z-index:60; pointer-events:none; max-width:92vw; text-align:center; }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  #resume { display:none; background:var(--panel-bg); border:1px solid var(--text-story); border-radius:8px; padding:12px; margin-bottom:20px; text-align:center; }
+  .autofx { color:#ffd54a; border-left:3px solid #ffd54a; padding:6px 10px; margin:10px 0; background:rgba(255,213,74,.07); }
+  .flow { border:1px dashed var(--text-blue); border-radius:8px; padding:14px; margin-top:15px; background:rgba(0,191,255,.05); }
+  .flow-title { color:var(--text-blue); font-weight:bold; font-size:1.15em; margin-bottom:4px; }
+  .flow-sub { color:#999; margin-bottom:10px; }
+  .flow-line { margin:6px 0; } .flow-ok { color:var(--text-story); margin:6px 0; font-weight:bold; } .flow-bad { color:#ff5555; margin:6px 0; font-weight:bold; }
+  .flow-btns { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+  .dice-row { display:flex; align-items:center; gap:14px; margin:12px 0; flex-wrap:wrap; }
+  .dice-row .lbl { color:#aaa; font-size:.85em; }
+  .die { width:54px; height:54px; background:#f4f4f4; border-radius:9px; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); padding:7px; box-shadow:0 0 8px rgba(255,255,255,.35); }
+  .die i { display:block; } .die i.p { background:#111; border-radius:50%; margin:2px; }
+  .die.rolling { animation:shake .12s infinite; }
+  @keyframes shake { 0%{transform:rotate(-8deg)} 50%{transform:rotate(8deg) translateY(-3px)} 100%{transform:rotate(-8deg)} }
+  .choice-btn.disabled, .choice-btn:disabled { opacity:.35; cursor:not-allowed; border-style:dashed; }
+  .choice-btn.disabled:hover, .choice-btn:disabled:hover { background:transparent; color:var(--text-blue); font-weight:normal; }
+  .choice-btn .why { color:#ff9933; font-size:.85em; }
+  #chap-dead .chapter-title { color:#ff4444; border-color:#ff4444; }
+
+#langsel{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:#000;z-index:9999;padding:24px;text-align:center;font-family:inherit}
+#langsel[hidden]{display:none}
+#langsel h1{margin:0;font-size:clamp(22px,5vw,32px);letter-spacing:.08em;color:#00ff66;text-transform:uppercase}
+#langsel .lrow{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+#langsel button{min-width:150px;min-height:52px;padding:12px 26px;font:inherit;font-size:18px;letter-spacing:.06em;color:#00bfff;background:#0a0a0a;border:1px solid #00bfff;border-radius:4px;cursor:pointer}
+#langsel button[data-l=hu]{color:#00ff66;border-color:#00ff66}
+#langsel button:hover,#langsel button:focus-visible{background:#111;outline:none}
+</style>
+
+<style id="demo-css">
+.demo-badge{position:fixed;top:0;left:0;z-index:99999;pointer-events:none;width:92px;height:92px;overflow:hidden}
+.demo-badge span{position:absolute;top:20px;left:-30px;width:130px;text-align:center;transform:rotate(-45deg);background:#ffb545;color:#1a1200;font:700 12px/22px 'Chakra Petch',Inter,Arial,sans-serif;letter-spacing:.18em;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+.demo-tag{display:inline-block;margin:10px 0 4px;padding:5px 12px;border:1px solid #ffb545;border-radius:999px;color:#ffb545;background:rgba(255,181,69,.1);font:600 12px/1.3 'Chakra Petch',Inter,Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase}
+</style></head>
+<body>
+<div id="langsel" hidden><h1>Select language</h1><div class="lrow"><button data-l="en">English</button><button data-l="hu">Magyar</button></div></div>
+<div class="demo-badge" aria-hidden="true"><span>DEMO</span></div>
+
+<div id="hud">
+  <span class="box"><b id="h-cls"></b></span>
+  <span class="box" id="h-hpbox">Életerő: <b id="h-hp"></b></span>
+  <span class="box">Lőszer: <b id="h-ammo"></b></span>
+  <span class="box" id="h-infbox">Infekció: <b id="h-inf"></b></span>
+  <span class="box">Infó: <b id="h-info"></b></span>
+  <span class="box">Harcérték: <b id="h-atk"></b></span>
+  <span class="box">Ügyesség: <b id="h-agi"></b></span>
+  <button id="btn-new">↻ Új játék</button>
+  <span class="box" id="h-items"></span>
+</div>
+<div id="toast"></div>
+<div id="app">
+  <h1 class="main-title">GRAYHAVEN: AZ UTOLSÓ 12 ÓRA<br><small style="font-size: 0.5em; display: block; margin-top: 5px;">Lapozós Kalandkönyv</small></h1><div class="demo-tag">DEMO VERZIÓ — ingyenes részlet a teljes játékból</div>
+
+  <div id="resume"><button class="choice-btn" id="resume-go" style="width:100%"></button></div>
+  <!-- Játékszabályok -->
+  <div class="rules-card">
+    <button class="toggle-rules-btn" onclick="toggleRules()">Játékszabályok és Karakterek (Kattints a megnyitáshoz/bezáráshoz)</button>
+    <div class="rules-content" id="rules-content">
+      <div class="chapter-title" style="margin-top: 15px;">Játékszabályok</div>
+      <div class="story-text">A játékhoz egy darab hatoldalú kockára (D6) lesz szükséged (vagy használhatsz egy virtuális kockadobót).
+
+1. Karakterek és Induló Értékek
+Rendőr – Életerő: 12 | Harcérték: +3 | Lőszer: 12 | Infekció: 0% | Infó: 1 | Felszerelés: Szolgálati fegyver, Golyóálló mellény
+Laborasszisztens – Életerő: 8 | Harcérték: +0 | Lőszer: 0 | Infekció: 0% | Infó: 4 | Felszerelés: Belépőkártya, Tablet, Fertőtlenítő
+Újságíró – Életerő: 9 | Harcérték: +1 | Lőszer: 0 | Infekció: 0% | Infó: 3 | Felszerelés: Diktafon, Sajtóigazolvány, Zseblámpa
+
+2. A Harcrendszer Menete
+Amikor harcra kerül sor egy fertőzöttel (vagy ellenséges NPC-vel):
+Dobásod: Dobj 1D6-ot, és add hozzá a karaktered Harcértékét (pl. Rendőr: Dobás + 3).
+Ellenfél dobása: Dobj egy külön kockát az ellenfélnek is (az ellenfél ereje a fejezetben van megadva).
+Összehasonlítás:
+Ha a te összértéked magasabb, te találtál be: az ellenfél sérül / legyőzöd.
+Ha az ellenfél értéke magasabb vagy egyenlő (döntetlen), ő harapdál/üt meg téged: általában veszítesz 2 Életerőt (a fejezet pontosítja).
+Tűzfegyver használata (ha van lőszered): A harc megkezdése előtt dönthetsz úgy, hogy elhasználsz 1 Lőszert (vagy többet). Ilyenkor nem kell kockáznod, automatikusan nyersz az adott harci körben.
+
+3. A Rejtett Infekció Szabálya
+Ha egy döntésnél a szöveg azt jelzi, hogy „+X% Infekcióet (Rejtett)”, azt csak jegyezd fel magadnak. Ha a Infekcióed eléri vagy meghaladja a 100%-ot, a játék végén a hajón rejtett Game Over vár rád.
+
+4. Automatikus játékmenet
+A játék maga követi az Életerődet, Lőszeredet, Infekciódat, Információdat és Ügyességedet (felső sáv), a dobásokat pedig helyetted dobja: harcnál az ellenfél dobása 1D6 + az Ereje fele (lefelé kerekítve), döntetlennél az ellenfél nyer. Ha van Lőszered, harc előtt elhasználhatod a biztos győzelemhez. Az Ügyességi pontok a próbadobásokhoz hozzáadódnak. Ha az Életerőd 0-ra csökken, meghalsz. Az állás automatikusan mentődik.</div>
+    </div>
+  </div>
+
+  <!-- Fejezetek -->
+  
+  <div class="chapter-card active" id="chap-1">
+    <div class="chapter-title">1. FEJEZET</div>
+    <div class="story-text">Grayhaven City, hajnali 4:14. A karanténszirénák baljóslatúan üvöltenek a sűrű, fekete füsttel borított égbolt alatt. Az utcákon lángoló járművek roncsaiból árad a korom, a háttérben pedig folyamatos gépfegyverropogás visszhangzik. A távolból szívhasító emberi sikolyok keverednek az elszabadult lények torokhangú hörgésével. A rádióból egy zaklatott, rekedt katonai hang recseg a statikus zajon át: a várost teljesen lezárták, a K-17-es vírus megállíthatatlanul terjed, a hadsereg pedig déli 12:00-kor végleges szőnyegbombázást és fertőtlenítést hajt végre. A másodpercek könyörtelenül peregnek, kevesebb mint nyolc órád van arra, hogy kijuss ebből a földi pokolból. Minden perccel közelebb kerül a megsemmisülés, a döntéseid élet és halál között határoznak. 
+Hol kezded a történetet?</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-2')">Ha a Rendőr bőrébe bújsz, ugorj a 2. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-3')">Ha a Laborasszisztens vagy, ugorj a 3. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-4')">Ha az Újságírót választod, ugorj a 4. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-2">
+    <div class="chapter-title">2. FEJEZET (Rendőr - Őrszoba)</div>
+    <div class="story-text">A Belvárosi 4-es Őrszoba szétlőtt, üvegtörmelékes recepcióján állsz. A villódzó neonszerkezet zúgása alig nyomja el az utcáról beszűrődő sikolyokat. A pulton egy hűlő kávéscsésze hever kiborulva, a falakat pedig friss, alvadt vérfoltok borítják. A fegyverraktár vasajtaja félig nyitva áll, de a földön egy véresen hörgő, torz arcú egyenruhás test próbál kétségbeesetten megkapaszkodni a csizmádban. Egykori járőrtársad szemei teljesen elfehéredtek, és csak az éhség hajtja a mozdulatait. A falra szerelt szolgálati rádióban kétségbeesett bejelentések cikáznak a folyami dokkoknál kialakult káoszról és a főpályaudvari lezárt blokádokról.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-5')">Ha rálősz a lényre: Vonj le 1 Lőszert, és ugorj az 5. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-6')">Ha megpróbálod elkerülni és átlépsz rajta a garázs felé: Ugorj a 6. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-3">
+    <div class="chapter-title">3. FEJEZET (Laborasszisztens - Apex Lab)</div>
+    <div class="story-text">Az Apex BioTech alagsori szervertermének jéghideg homályában lázasan gépelsz a konzolon. A képernyő hideg kék fénye megvilágítja verejtékes arcodat, miközben a rendszer lassú haladásjelzőjét figyeled. A monitor képernyőjén lassan töltődnek le a K-17-es mutáció kísérleti adatai és genetikai térképei. A szomszédos kísérleti szobákból átszűrődő kaparászó hangok jelzik, hogy a tesztalanyok kiszabadultak a tárolókból. Hirtelen csikorgó hang hallatszik fentről, és a szellőzőrácsból édeskés, sűrű, sárgás gáz áramlik be a helyiségbe, ami azonnal marja a szemedet és égetni kezdi a torkodat.</div>
+    <div class="loot">Loot / Állapot: +2 Információ, +15% Infekció (Rejtett) / -1 Életerő</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-7')">Kitartasz az adatok letöltése mellett: Adj hozzá +2 Információt, +15% Infekcióet (Rejtett), majd ugorj a 7. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-8')">Azonnal eldobod a panelt és a karbantartó lépcső felé menekülsz: Vonj le 1 Életerőt, és ugorj a 8. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-4">
+    <div class="chapter-title">4. FEJEZET (Újságíró - Szerkesztőség)</div>
+    <div class="story-text">A Grayhaven Chronicle elhagyatott, feldúlt irodájában az asztalod alatt húzodod meg magad, fojtott lélegzettel. A szétszóródott papírlapokat és összetört monitorokat félhomály borítja. A főszerkesztő élettelen, vérbe fagyott teste mellett egy titkos, lepecsételt dosszié hever, amely a kikötői csempészhajók illegális útvonalait tartalmazza. Az ablakon át látod, ahogy a várost elborítja a tűzvész, és a füst felgomolyog az éjszakába. Hirtelen nehéz, csoszogó léptek neszezése és fojtott morgás hallatszik a folyosóról.</div>
+    <div class="loot">Loot / Állapot: +2 Információ</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-9')">Felkapod a dossziét: Adj hozzá +2 Információt, és ugorj a 9. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-10')">Csendben a hátsó vészkijárat felé surransz a kulcsaidért: Ugorj a 10. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-5">
+    <div class="chapter-title">5. FEJEZET</div>
+    <div class="story-text">A lövés éles hangja végigvisszhangzik a kopár folyosón, és a fertőzött test rekedt hörgéssel terül el a padlón. A csönd visszatér a szobába, de csak egyetlen törékeny másodpercre. Odalépve hozzá, véres zsebéből egy mágneses kulcskártyát húzol ki, ami a tetőtéri rendőrségi helikopterhez ad hozzáférést. A torkolattűz fénye és az dörrenés azonban felhívta rád a figyelmet. Az éles dörrenésre válaszul odakintről üvegtörés zaja és éhes üvöltés szűrődik be: a csorda megindult feléd.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-11')">Ugorj a 11. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-6">
+    <div class="chapter-title">6. FEJEZET</div>
+    <div class="story-text">Gyorsan és óvatosan átlépsz a földön vonagló lényen, majd leszaladsz a nyirkos mélygarázsba. A betonfalak visszaverik a saját szapora lépteid zaját, a levegőben benzin és elégett gumi szaga érződik. Az árnyékok között egy páncélozott járőrkocsi áll, melynek ablakát betörték, de a kulcs még ott lóg a gyújtáskapcsolóban. A jármű karosszériáján karcolások és véres kéznyomok látszanak, de a motor azonnal röffen, ahogy elfordítod a kulcsot. A műszerfal recsegő rádiója szerint a városi körgyűrű még részben járható.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-12')">Ugorj a 12. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-7">
+    <div class="chapter-title">7. FEJEZET</div>
+    <div class="story-text">Az utolsó adatcsomag is sikeresen letöltődik a meghajtóra, de az égető gáz súlyosan megviselte a tüdődet és a légutadat. Vadul köhögsz, miközben a könnytől homályos szemmel próbálsz tájékozódni a sűrű mérgező ködben. A laboratórium szirénázó vészkijárata egy elágazáshoz vezet: az egyik irány lefelé, a sötét föld alatti csatornákba visz, a másik pedig felfelé, a tető felé mutat. Mindkét irányból fenyegető neszek hallatszanak, de a döntést nem halaszthatod tovább.</div>
+    <div class="loot">Loot / Állapot: +10% Infekció (Rejtett)</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-13')">A csatornák felé indulsz (Hajós ág): Ugorj a 13. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-14')">A tető felé mászol (Helikopteres ág): Ugorj a 14. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-8">
+    <div class="chapter-title">8. FEJEZET</div>
+    <div class="story-text">Kifulladva, vadul verő szívvel éred el az épület szűk karbantartó alagútját. A sötét csövek és vezetékek között botladozva rohansz előre, miközben fojtogató félelem szorítja a mellkasodat. Mögötted a sárgás gáz elszabaduló csápjai kúsznak a csövek mentén, ami még gyorsabb tempóra kényszerít. A tüdődet marja a dohos levegő, minden lépésnél a betonpadló hidegét érzed a talpad alatt. A szűk járat végén végre megpillantod a rozsdás fémkeretet, mely a szabadba vezet. A rozsdás vasajtót benyomva végül kijutsz a ködös, sötét és fenyegetően csendes utcára. A távolban szétlőtt autók és magukra hagyott csomagok hevernek az aszfalton.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-15')">Ugorj a 15. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-9">
+    <div class="chapter-title">9. FEJEZET</div>
+    <div class="story-text">A dossziét gyorsan a kabátod alá rejtve kilépsz a folyosóra, ale a semmiből hirtelen egy torz arcú, agresszív civil fertőzött ront rád véres kézzel! Ruhája szét van tépve, szemeiben pedig tébolyult, állatias éhség ég. A roham kivédésére alig marad egyetlen másodperced.
+Harci teszt a civil ellen (Ereje: 2): Ha nyersz, kikerülöd és ugorj a 15. fejezethez. Ha veszítesz, veszítesz 2 Életerőt, ale elmenekülsz: ugorj a 15. fejezethez.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-15')">Ugorj a 15. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-10">
+    <div class="chapter-title">10. FEJEZET</div>
+    <div class="story-text">Óvatosan oldalazva eléred a mélygarázst, ahol rábukkansz a szerkesztőség matricázott cégautójára. A garázs sötét zugaiból nyöszörgés hallatszik, ale az autó még sértetlennek tűnik. A kulcsok zsebben, az jármű indítható. Berakod a táskádat az ülésre, és felkészülsz a veszélyes útra.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-12')">Ugorj a 12. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-11">
+    <div class="chapter-title">11. FEJEZET</div>
+    <div class="story-text">A földszinti ablakok berobbannak, a horda feltartóztathatatlanul árad be az épületbe. A lények egymást taposva tülekednek a szűk ajtórésen át. Nincs más választásod, mint elbarikádozni a lenti ajtót, és felfelé rohanni a lépcsőházban a tető irányába. A lépcsőfokok csúszósak a vértől, mögötted pedig már kaparásznak a körmök a fém korláton.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-14')">Ugorj a 14. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-12">
+    <div class="chapter-title">12. FEJEZET (Körgyűrű - Autó)</div>
+    <div class="story-text">A gázra lépve behajtasz a városi körgyűrűre. A motor bőgése visszhangzik a falak között, ahogy megpróbálsz utat vágni az elhagyott kocsik erdejében. A látvány kaotikus: a forgalom teljesen bedugult, a pánikba esett sofőrök egymásnak hajtva, dudálva és taposva próbálnak kijutni a városból. Az út szélén elhagyott mentőautók villognak céltalanul, a tömeg pedig kétségbeesetten rohan a kerítések felé.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-16')">Megpróbálod kikerülni a dugót a szűk, sötét mellékutcákon át: Ugorj a 16. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-17')">Türelmesen araszolsz a főúton a határ felé: Ugorj a 17. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-13">
+    <div class="chapter-title">13. FEJEZET (Csatorna - Hajó felé)</div>
+    <div class="story-text">Leereszkedsz a sötét, bűzös csatornahálózatba. A szag szinte elviselhetetlen, a levegő nehéz és nyirkos. Térdig érő, hideg, gyanús folyadékban gázolsz. A nyirkos téglafalakon furcsa, rikító színű, lüktető gombatelepek növögetnek. A víz alól időnként névtelen uszadékok és elmerült tárgyak ütköznek a lábadnak.</div>
+    <div class="loot">Loot / Állapot: +15% Infekció (Rejtett) [ha megcsúszol]</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-18')">Óvatosan, a falaktól és a gombáktól távol haladsz a sodrás közepén: Ugorj a 18. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-18')">Sietsz a sötétben, és megcsúszol a fertőzött, nyálkás iszapban: +15% Infekció (Rejtett), és ugorj a 18. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-14">
+    <div class="chapter-title">14. FEJEZET (Skyview Tető - Helikopter)</div>
+    <div class="story-text">Kivágod a tetőre vezető nehéz ajtót, és felérsz a szeles magaslatra. Az éjszakai hideg szél azonnal az arcadba csap, miközben a város feletti füstfellegek kavarognak. A helikopter rotorjai már forognak, a pilóta integet és kiabál a nyitott ajtóból a hajtóműzajban. A leszállópálya szélén elhagyott csomagok és katonai felszerelések hevernek szétszórva.</div>
+    <div class="loot">Loot / Állapot: +1 Információ [ha átkutatod]</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-19')">Azonnal odafutsz és beugrasz a helikopterbe: Ugorj a 19. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-19')">Még gyorsan átkutatod a tetőtéri biztonsági irodát (+1 Információ): Ugorj a 19. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-15">
+    <div class="chapter-title">15. FEJEZET (Az utca sötétje)</div>
+    <div class="story-text">Kijutottál az utcára, ahol a füst és a köd szinte teljesen elnyeli a közvilágítás maradékát. A távolban gépfegyverek száraz kopogása és robbanások morajlása rázza meg a talajt. Két fontos helyszín körvonalazódik a távolban: a Központi Gyógyszertár romjai vagy a Metró aluljáró sötét lejárója, ami a folyó felé vezethet. Választanod kell, mielőtt egy kósza fertőzött csorda rád talál.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-20')">A Gyógyszertár felé mész: Ugorj a 20. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-13')">A Metró aluljáróba ereszkedsz le: Ugorj a 13. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-16">
+    <div class="chapter-title">16. FEJEZET</div>
+    <div class="story-text">A szűk, elhagyatott mellékutcákban hirtelen egy fegyveres fosztogatókból álló csapat ugrik ki az árnyékból, elállva az autód útját. Rögtönzött barikádokat emeltek elhasznált hordókból és bútorokból. Fenyegetően emelik fel csőre töltött fegyvereiket, és ordítva követelik az értékeidet.</div>
+    <div class="loot">Loot / Állapot: -1 Lőszer / -2 Életerő</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-17')">Ha Rendőr vagy és van lőszered (elhasználsz 1-et): A lövésre elrettenve elugranak, ugorj a 17. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-17')">Ha nincs lőszered vagy más karakter vagy: Bekerítenek és megkopasztanak (Veszítesz 2 Életerőt), ale továbbengednek. Ugorj a 17. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-17">
+    <div class="chapter-title">17. FEJEZET</div>
+    <div class="story-text">Eléred az autópálya-felhajtó szakaszt. Az aszfaltot kiégett roncsok és szétszóródott lőszeres hüvelyek borítják. A távolban már világítanak a katonai ellenőrzőpont hatalmas fényszórói, és szögesdróttal lezárt kordonok látszanak. A páncélozott járművek mögött felfegyverzett katonák alakjai körvonalazódnak a reflektorfényben.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-51')">Ugorj az 51. fejezethez</button>
+      <button class="choice-btn" onclick="goToChap('chap-15')">vagy térj vissza a városba: ugorj a 15. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-18">
+    <div class="chapter-title">18. FEJEZET</div>
+    <div class="story-text">A csatorna alagútjának végén megpillantod a folyami kompok távoli fényeit. A friss levegő éles kontrasztot alkot a föld alatti bűzzel, de a víz felszínén olajfoltok úsznak. Egy elhagyatott, rozsdás raktár létrája vezet fel a dokkok szintjére. A magasból gépek zúgása és a víz csapkodása hallatszik.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-71')">Ugorj a 71. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-19">
+    <div class="chapter-title">19. FEJEZET</div>
+    <div class="story-text">A helikopter zúgva elrugaszkodik a tetőtől. A gép megbillen a szélben, ahogy szélsebesen emelkedni kezd a felhőkarcolók fölé. Ahogy magasba emelkedtek, eléd tárul a lángoló, kivilágított Grayhaven drámai képe, ami lassan zsugorodni kezd alattad. A várost borító füst tengeréből robbanások narancssárga villanásai törnek elő.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-61')">Ugorj a 61. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-20">
+    <div class="chapter-title">20. FEJEZET (Központi Gyógyszertár)</div>
+    <div class="story-text">A gyógyszertár védőrácsát felfeszítették, a kirakat üvege darabokban hever. A széttört gyógyszeres dobozok és elszórt kötszerek borítják a padlót. A sötét belső térben egy polgári túlélő, Anna lapul egy pult mögött, akinek a lábán egy csúnya, üszkösnek tűnő seb éktelenkedik. Kétségbeesetten szorít egy elmosódott képet a családjáról, miközben halkan zokog.</div>
+    <div class="loot">Loot / Állapot: +1 Információ, -10% Infekció / +2 Életerő</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-21')">Megosztod vele a fertőtlenítődet (ha Laborasszisztens vagy) vagy bekötözöd (+1 Információ, és csökkentheted a rejtett Infekciódat -10%-kal): Ugorj a 21. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-21')">Magára hagyod, és gyorsan átkutatod a polcokat kötszerekért (+2 Életerő gyógyulás): Ugorj a 21. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-21">
+    <div class="chapter-title">21. FEJEZET (Kereszteződés a gyógyszertár után)</div>
+    <div class="story-text">Kilépsz a kifosztott gyógyszertárból a füstös, hideg hajnalba. Az utca túloldalán elhagyott mentőautó villog némán. Az utca végén a Grayhaven Kórház hatalmas, sötét tömbje magasodik, ahonnan szirénázás és fegyverropogás visszhangzik. Jobbra egy katonai kordon látszik. A levegőben terjedő égett szag jelzi, hogy a város gyorsan pusztul.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-22')">A Kórház felé veszed az irányt: Ugorj a 22. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-23')">A Katonai Ellenőrzőpont felé indulsz: Ugorj a 23. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-12')">Meguntad a gyaloglást, és visszamész járművet keresni (Autós ág): Ugorj a 12. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-22">
+    <div class="chapter-title">22. FEJEZET (Grayhaven Kórház - Sürgősségi)</div>
+    <div class="story-text">A kórház sürgősségi fogadócsarnoka leírhatatlan mészárszékre hasonlít. Felborult hordágyak, vértócsák és eldobott orvosi műszerek borítják a kövezetet. A karanténosztály vastag vasajtaja nyitva áll, és egy fertőzött ápoló vonszolja feléd a lábát véres köpenyben. Szájából sziszegő hangok törnek elő, miközben feléd nyúl élesre kopott körmeivel.
+Harci teszt az ápoló ellen (Ereje: 3): Ha Rendőr vagy és lősz (-1 Lőszer), azonnal nyersz. Ha nyersz kockával, ugorj a 24. fejezethez. Ha veszítesz, veszítesz 2 Életerőt, +10% Infekciót (Rejtett), és ugorj a 24. fejezethez.</div>
+    <div class="loot">Loot / Állapot: -1 Lőszer / -2 Életerő, +10% Infekció (Rejtett)</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-24')">Ugorj a 24. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-23">
+    <div class="chapter-title">23. FEJEZET (Katonai Kordon)</div>
+    <div class="story-text">Egy elhagyatott, szétlőtt katonai poszthoz érsz. A homokzsákok szétnyíltak, a földet elhagyott sisakok és gázálarcok borítják. A homokzsákok mögött fekvő halott tiszt rádiója még üzemel és sziszeg. A parancsnokság hangja a folyami evakuációt említi, de egyben teljes légtérzárat is hirdet. A recsegő adásból megtudod, hogy az utolsó hajó hamarosan kifut.</div>
+    <div class="loot">Loot / Állapot: +1 Információ / +3 Lőszer vagy +10% Infekció (Rejtett)</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-25')">Hallgatsz a rádióadásra és jegyzetelsz: Adj hozzá +1 Információt, és ugorj a 25. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-25')">Átkutatod a tiszt holttestét: Ha Rendőr vagy, adj hozzá +3 Lőszert. Minden más karakter: +10% Infekciót (Rejtett) a véres érintkezés miatt. Ugorj a 25. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-24">
+    <div class="chapter-title">24. FEJEZET</div>
+    <div class="story-text">Az ápoló holtan terül el. A csend gyorsan visszatér a véres fogadócsarnokba. A pulton meglátsz egy orvosi mesterkulcsot, amivel eléred a szigorúan őrzött gyógyszerraktárt vagy a mentőliftet. A kulcskártya megcsillan a vészvilágítás gyenge fényében.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-26')">A gyógyszerraktárba mész ellenszer után kutatni: Ugorj a 26. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-14')">A mentőhelikopter leszállójához mész a tetőre (Helikopteres ág): Ugorj a 14. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-25">
+    <div class="chapter-title">25. FEJEZET</div>
+    <div class="story-text">A kordon mögül hirtelen egy elszabadult, páncélozott katonai dzsip gördül ki, de a vezetője magatehetetlenül borul a kormányra – a jármű egyenesen feléd száguld! A motor üvölt, a kerekek csikorognak a törmeléken. Nincs időd gondolkodni, azonnal cselekedned kell.
+Félreugrasz (Állóképesség-próba: 1D6-tal 3 vagy több kell): Ha sikerül, sértetlenül megúszod, ugorj a 27. fejezethez. Ha 1 vagy 2 a dobásod, eltalál: veszítesz 3 Életerőt, ugorj a 27. fejezethez.</div>
+    <div class="loot">Loot / Állapot: -3 Életerő [ha eltalál]</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-27')">Ugorj a 27. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-26">
+    <div class="chapter-title">26. FEJEZET</div>
+    <div class="story-text">A gyógyszerraktár polcain kutatsz. Az elhagyott fiókokban orvosi fecskendők és kémcsövek hevernek szétszórva. Ha Laborasszisztens vagy, azonnal felismered a K-17 vakcina kísérleti prototípusát: csökkentheted a rejtett Infekciódat -25%-kal. Ha más karakter vagy, csak erős fertőtlenítőt találsz (-10% Infekció). A dobozokat gyorsan a táskádba rejtve felkészülsz a tovablépésre.</div>
+    <div class="loot">Loot / Állapot: -25% Infekció (Rejtett) vagy -10% Infekció (Rejtett)</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-13')">A hátsó alagsori kijáraton át a folyó felé indulsz: Ugorj a 13. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-27">
+    <div class="chapter-title">27. FEJEZET</div>
+    <div class="story-text">A füstölgő dzsipből egy sérült katona, Vance őrmester mászik ki. Nehéz légzéssel dől a felborult jármű oldalának. Véres a vállízülete, de szorosan fog egy távcsöves puskát, és fontos hírei vannak a dokkokról. Szemeiből látszik, hogy már nem bírja sokáig segítség nélkül.</div>
+    <div class="loot">Loot / Állapot: +2 Információ / +2 Lőszer vagy +1 Információ</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-28')">Segítesz Vance-nek bekötözni a sebét: Adj hozzá +2 Információt, és ugorj a 28. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-28')">Elveszed tőle a fegyvert: Ha Rendőr vagy, +2 Lőszer; ha más karakter, +1 Információ. Vance magára marad. Ugorj a 28. fejezethez.</button>
+    </div>
+  </div>
+
+  
+  <div class="chapter-card" id="chap-28">
+    <div class="chapter-title">28. FEJEZET</div>
+    <div class="story-text">Vance utolsó erejével elárulja, hogy a 4-es folyami dokknál horgonyzó hajó az egyetlen esély, de a zsilipkapuk megragadtak. Megrázza a fejét, és figyelmeztet a vízi út veszélyeire is. Köhögve szorítja meg a kezedet, mielőtt összeesne.</div>
+    <div class="choices">
+      <button class="choice-btn" onclick="goToChap('chap-71')">Elindulsz a dokkok felé a folyóparton (Hajós ág): Ugorj a 71. fejezethez.</button>
+      <button class="choice-btn" onclick="goToChap('chap-51')">Inkább a városközponti autópálya felé fordulsz: Ugorj az 51. fejezethez.</button>
+    </div>
+  </div>
+
+  <div class="chapter-card" id="chap-demo">
+    <div class="chapter-title">DEMO VÉGE</div>
+    <div class="story-text">A kereszteződés után a város egyre mélyebbre húz. A hajnal még messze van, a kordon mögött lövések dörrennek, és az Infekciód minden lépéssel csendben kúszik fölfelé.
+
+Itt ér véget a DEMO. A teljes játékban további több mint kilencven fejezet, a Rádiótorony, a Metró, a Feketepiaci Bunker és a menekülés végső döntései várnak.
+
+A teljes játék hamarosan megjelenik.</div>
+    <div class="choices"></div>
+  </div>
+
+  <div class="chapter-card" id="chap-dead">
+    <div class="chapter-title">GAME OVER – Elhunytál</div>
+    <div class="story-text">A sebeid túl súlyosak. Grayhaven utolsó 12 órája számodra itt véget ér.</div>
+    <div class="loot" id="dead-info"></div>
+    <div class="choices"><button class="choice-btn" id="dead-new">↻ Új játék</button></div>
+  </div>
+</div>
+
+
+<script>
+var __DICT={"Életerő:":"Health:","Lőszer:":"Ammo:","Infekció:":"Infection:","Infó:":"Intel:","Harcérték:":"Combat:","Ügyesség:":"Agility:","↻ Új játék":"↻ New game","GRAYHAVEN: AZ UTOLSÓ 12 ÓRA":"GRAYHAVEN: THE LAST 12 HOURS","Játékszabályok és Karakterek (Kattints a megnyitáshoz/bezáráshoz)":"Rules and Characters (Click to open/close)","Játékszabályok":"Rules","A játékhoz egy darab hatoldalú kockára (D6) lesz szükséged (vagy használhatsz egy virtuális kockadobót).\n\n1. Karakterek és Induló Értékek\nRendőr – Életerő: 12 | Harcérték: +3 | Lőszer: 12 | Infekció: 0% | Infó: 1 | Felszerelés: Szolgálati fegyver, Golyóálló mellény\nLaborasszisztens – Életerő: 8 | Harcérték: +0 | Lőszer: 0 | Infekció: 0% | Infó: 4 | Felszerelés: Belépőkártya, Tablet, Fertőtlenítő\nÚjságíró – Életerő: 9 | Harcérték: +1 | Lőszer: 0 | Infekció: 0% | Infó: 3 | Felszerelés: Diktafon, Sajtóigazolvány, Zseblámpa\n\n2. A Harcrendszer Menete\nAmikor harcra kerül sor egy fertőzöttel (vagy ellenséges NPC-vel):\nDobásod: Dobj 1D6-ot, és add hozzá a karaktered Harcértékét (pl. Rendőr: Dobás + 3).\nEllenfél dobása: Dobj egy külön kockát az ellenfélnek is (az ellenfél ereje a fejezetben van megadva).\nÖsszehasonlítás:\nHa a te összértéked magasabb, te találtál be: az ellenfél sérül / legyőzöd.\nHa az ellenfél értéke magasabb vagy egyenlő (döntetlen), ő harapdál/üt meg téged: általában veszítesz 2 Életerőt (a fejezet pontosítja).\nTűzfegyver használata (ha van lőszered): A harc megkezdése előtt dönthetsz úgy, hogy elhasználsz 1 Lőszert (vagy többet). Ilyenkor nem kell kockáznod, automatikusan nyersz az adott harci körben.\n\n3. A Rejtett Infekció Szabálya\nHa egy döntésnél a szöveg azt jelzi, hogy „+X% Infekcióet (Rejtett)”, azt csak jegyezd fel magadnak. Ha a Infekcióed eléri vagy meghaladja a 100%-ot, a játék végén a hajón rejtett Game Over vár rád.\n\n4. Automatikus játékmenet\nA játék maga követi az Életerődet, Lőszeredet, Infekciódat, Információdat és Ügyességedet (felső sáv), a dobásokat pedig helyetted dobja: harcnál az ellenfél dobása 1D6 + az Ereje fele (lefelé kerekítve), döntetlennél az ellenfél nyer. Ha van Lőszered, harc előtt elhasználhatod a biztos győzelemhez. Az Ügyességi pontok a próbadobásokhoz hozzáadódnak. Ha az Életerőd 0-ra csökken, meghalsz. Az állás automatikusan mentődik.":"For this game you will need one six-sided die (D6), or you can use a virtual dice roller.\n\n1. Characters and Starting Values\nPolice Officer – Health: 12 | Combat: +3 | Ammo: 12 | Infection: 0% | Intel: 1 | Gear: Service pistol, Bulletproof vest\nLab Assistant – Health: 8 | Combat: +0 | Ammo: 0 | Infection: 0% | Intel: 4 | Gear: Access card, Tablet, Disinfectant\nJournalist – Health: 9 | Combat: +1 | Ammo: 0 | Infection: 0% | Intel: 3 | Gear: Voice recorder, Press pass, Flashlight\n\n2. How Combat Works\nWhen you must engage an infected creature (or a hostile NPC):\nYour roll: Roll 1D6 and add your character's Combat value (e.g. Police Officer: roll + 3).\nThe enemy's roll: Roll a separate die for the enemy as well (the enemy's strength is given in the chapter).\nComparison:\nIf your total is higher, you successfully land a blow: the enemy takes damage or is defeated.\nIf the enemy's total is higher or equal (a tie), it bites/strikes you: you usually lose 2 Health (the chapter will specify).\nUsing a firearm (if you have ammo): Before combat begins, you may choose to expend 1 (or more) Ammo. This bypasses the die roll, automatically granting you victory for that combat round.\n\n3. The Hidden Infection Rule\nWhenever a choice indicates \"+X% Infection (Hidden)\", note it down for your records. If your Infection reaches or exceeds 100%, a hidden Game Over awaits you at the end of the game, on the ship.\n\n4. Automatic Play\nThe game itself tracks your Health, Ammo, Infection, Intel and Agility (top bar), and rolls the dice for you: in combat the enemy's roll is 1D6 + half its Strength (rounded down), and on a tie the enemy wins. If you have Ammo, you can spend it before a fight for a guaranteed win. Agility points are added to skill-check rolls. If your Health drops to 0, you die. Your progress is saved automatically.","1. FEJEZET":"CHAPTER 1","Grayhaven City, hajnali 4:14. A karanténszirénák baljóslatúan üvöltenek a sűrű, fekete füsttel borított égbolt alatt. Az utcákon lángoló járművek roncsaiból árad a korom, a háttérben pedig folyamatos gépfegyverropogás visszhangzik. A távolból szívhasító emberi sikolyok keverednek az elszabadult lények torokhangú hörgésével. A rádióból egy zaklatott, rekedt katonai hang recseg a statikus zajon át: a várost teljesen lezárták, a K-17-es vírus megállíthatatlanul terjed, a hadsereg pedig déli 12:00-kor végleges szőnyegbombázást és fertőtlenítést hajt végre. A másodpercek könyörtelenül peregnek, kevesebb mint nyolc órád van arra, hogy kijuss ebből a földi pokolból. Minden perccel közelebb kerül a megsemmisülés, a döntéseid élet és halál között határoznak. \nHol kezded a történetet?":"Grayhaven City, 4:14 in the morning. The quarantine sirens howl ominously beneath a sky choked with thick, black smoke. Soot pours from the wrecks of burning vehicles in the streets, and machine-gun fire crackles ceaselessly in the background. From the distance, heart-rending human screams mingle with the guttural growls of the creatures that have broken loose. From the radio a strained, hoarse military voice crackles through the static: the city has been sealed off completely, the K-17 virus is spreading uncontrollably, and at 12:00 noon the army will carry out a final carpet bombing and decontamination. The seconds tick away mercilessly; you have less than eight hours to get out of this hell on earth. Every minute brings annihilation closer, and your decisions will be a matter of life and death. \nWhere do you begin the story?","Ha a Rendőr bőrébe bújsz, ugorj a 2. fejezethez.":"If you step into the Police Officer's shoes, go to Chapter 2.","Ha a Laborasszisztens vagy, ugorj a 3. fejezethez.":"If you are the Lab Assistant, go to Chapter 3.","Ha az Újságírót választod, ugorj a 4. fejezethez.":"If you choose the Journalist, go to Chapter 4.","2. FEJEZET (Rendőr - Őrszoba)":"CHAPTER 2 (Police Officer - Station)","A Belvárosi 4-es Őrszoba szétlőtt, üvegtörmelékes recepcióján állsz. A villódzó neonszerkezet zúgása alig nyomja el az utcáról beszűrődő sikolyokat. A pulton egy hűlő kávéscsésze hever kiborulva, a falakat pedig friss, alvadt vérfoltok borítják. A fegyverraktár vasajtaja félig nyitva áll, de a földön egy véresen hörgő, torz arcú egyenruhás test próbál kétségbeesetten megkapaszkodni a csizmádban. Egykori járőrtársad szemei teljesen elfehéredtek, és csak az éhség hajtja a mozdulatait. A falra szerelt szolgálati rádióban kétségbeesett bejelentések cikáznak a folyami dokkoknál kialakult káoszról és a főpályaudvari lezárt blokádokról.":"You stand in the shot-up, glass-strewn reception of Downtown Precinct 4. The humming of the flickering neon sign barely drowns out the screams drifting in from the street. A cooling coffee cup lies overturned on the counter, and the walls are spattered with fresh, clotted blood. The armory's iron door stands half open, but on the floor a uniformed body with a distorted face, rasping and bloody, tries desperately to grab hold of your boot. Your former patrol partner's eyes have gone completely white, and only hunger drives his movements. On the radio mounted on the wall, desperate announcements flash about the chaos at the river docks and the sealed blockades at the central station.","Ha rálősz a lényre: Vonj le 1 Lőszert, és ugorj az 5. fejezethez.":"If you shoot the creature: Subtract 1 Ammo and go to Chapter 5.","Ha megpróbálod elkerülni és átlépsz rajta a garázs felé: Ugorj a 6. fejezethez.":"If you try to avoid it and step over it toward the garage: Go to Chapter 6.","3. FEJEZET (Laborasszisztens - Apex Lab)":"CHAPTER 3 (Lab Assistant - Apex Lab)","Az Apex BioTech alagsori szervertermének jéghideg homályában lázasan gépelsz a konzolon. A képernyő hideg kék fénye megvilágítja verejtékes arcodat, miközben a rendszer lassú haladásjelzőjét figyeled. A monitor képernyőjén lassan töltődnek le a K-17-es mutáció kísérleti adatai és genetikai térképei. A szomszédos kísérleti szobákból átszűrődő kaparászó hangok jelzik, hogy a tesztalanyok kiszabadultak a tárolókból. Hirtelen csikorgó hang hallatszik fentről, és a szellőzőrácsból édeskés, sűrű, sárgás gáz áramlik be a helyiségbe, ami azonnal marja a szemedet és égetni kezdi a torkodat.":"In the ice-cold gloom of the Apex BioTech basement server room, you type feverishly at the console. The screen's cold blue light illuminates your sweating face as you watch the system's slow progress indicator. On the monitor the experimental data and genetic maps of the K-17 mutation download slowly. Scratching sounds seeping in from the neighboring test rooms tell you the test subjects have broken out of their containment. Suddenly a grinding noise sounds from above, and from the ventilation grille a sweetish, thick, yellowish gas flows into the room, instantly stinging your eyes and burning your throat.","Loot / Állapot: +2 Információ, +15% Infekció (Rejtett) / -1 Életerő":"Effects: +2 Intel, +15% Infection (Hidden) / -1 Health","Kitartasz az adatok letöltése mellett: Adj hozzá +2 Információt, +15% Infekcióet (Rejtett), majd ugorj a 7. fejezethez.":"You stay with the data download: Add +2 Intel, +15% Infection (Hidden), then go to Chapter 7.","Azonnal eldobod a panelt és a karbantartó lépcső felé menekülsz: Vonj le 1 Életerőt, és ugorj a 8. fejezethez.":"You abandon the console and flee immediately toward the maintenance stairs: Subtract 1 Health and go to Chapter 8.","4. FEJEZET (Újságíró - Szerkesztőség)":"CHAPTER 4 (Journalist - Newsroom)","A Grayhaven Chronicle elhagyatott, feldúlt irodájában az asztalod alatt húzodod meg magad, fojtott lélegzettel. A szétszóródott papírlapokat és összetört monitorokat félhomály borítja. A főszerkesztő élettelen, vérbe fagyott teste mellett egy titkos, lepecsételt dosszié hever, amely a kikötői csempészhajók illegális útvonalait tartalmazza. Az ablakon át látod, ahogy a várost elborítja a tűzvész, és a füst felgomolyog az éjszakába. Hirtelen nehéz, csoszogó léptek neszezése és fojtott morgás hallatszik a folyosóról.":"In the abandoned, ransacked offices of the Grayhaven Chronicle, you crouch under your desk, holding your breath. Scattered sheets of paper and smashed monitors lie in the half-light. Beside the editor-in-chief's lifeless body, lying in a pool of blood, is a sealed dossier containing the illegal routes of the harbor smuggling ships. Through the window you see the city engulfed in fire, the smoke billowing up into the night. Suddenly you hear the rustle of heavy, shuffling footsteps and muffled growling from the corridor.","Loot / Állapot: +2 Információ":"Effects: +2 Intel","Felkapod a dossziét: Adj hozzá +2 Információt, és ugorj a 9. fejezethez.":"You grab the dossier: Add +2 Intel, and go to Chapter 9.","Csendben a hátsó vészkijárat felé surransz a kulcsaidért: Ugorj a 10. fejezethez.":"You sneak quietly toward the rear emergency exit for your keys: Go to Chapter 10.","5. FEJEZET":"CHAPTER 5","A lövés éles hangja végigvisszhangzik a kopár folyosón, és a fertőzött test rekedt hörgéssel terül el a padlón. A csönd visszatér a szobába, de csak egyetlen törékeny másodpercre. Odalépve hozzá, véres zsebéből egy mágneses kulcskártyát húzol ki, ami a tetőtéri rendőrségi helikopterhez ad hozzáférést. A torkolattűz fénye és az dörrenés azonban felhívta rád a figyelmet. Az éles dörrenésre válaszul odakintről üvegtörés zaja és éhes üvöltés szűrődik be: a csorda megindult feléd.":"The sharp crack of the shot echoes down the bare corridor, and the infected body slumps to the floor with a hoarse rattle. Silence returns to the room, but only for a single fragile second. Stepping up to it, you pull a magnetic key card from its bloody pocket: it grants access to the police helicopter on the roof. But the flash of the muzzle and the bang have drawn attention to you. In answer to the sharp report, the sound of breaking glass and hungry howling drifts in from outside: the horde is on its way to you.","Ugorj a 11. fejezethez.":"Go to Chapter 11.","6. FEJEZET":"CHAPTER 6","Gyorsan és óvatosan átlépsz a földön vonagló lényen, majd leszaladsz a nyirkos mélygarázsba. A betonfalak visszaverik a saját szapora lépteid zaját, a levegőben benzin és elégett gumi szaga érződik. Az árnyékok között egy páncélozott járőrkocsi áll, melynek ablakát betörték, de a kulcs még ott lóg a gyújtáskapcsolóban. A jármű karosszériáján karcolások és véres kéznyomok látszanak, de a motor azonnal röffen, ahogy elfordítod a kulcsot. A műszerfal recsegő rádiója szerint a városi körgyűrű még részben járható.":"You step quickly and carefully over the creature writhing on the floor, then run down into the damp underground garage. The concrete walls throw back the noise of your own hurried footsteps, and the air smells of gasoline and burned rubber. Among the shadows stands an armored patrol car, its window smashed, but the key still dangles in the ignition. The bodywork is scratched and marked with bloody handprints, but the engine roars to life the moment you turn the key. According to the crackling radio on the dashboard, the city beltway is still partly passable.","Ugorj a 12. fejezethez.":"Go to Chapter 12.","7. FEJEZET":"CHAPTER 7","Az utolsó adatcsomag is sikeresen letöltődik a meghajtóra, de az égető gáz súlyosan megviselte a tüdődet és a légutadat. Vadul köhögsz, miközben a könnytől homályos szemmel próbálsz tájékozódni a sűrű mérgező ködben. A laboratórium szirénázó vészkijárata egy elágazáshoz vezet: az egyik irány lefelé, a sötét föld alatti csatornákba visz, a másik pedig felfelé, a tető felé mutat. Mindkét irányból fenyegető neszek hallatszanak, de a döntést nem halaszthatod tovább.":"The last data packet finishes downloading to the drive, but the burning gas has badly damaged your lungs and airways. You cough wildly as you try to get your bearings, eyes blurred with tears, in the thick toxic fog. The laboratory's wailing emergency exit leads to a junction: one way goes down into the dark underground sewers, the other points up toward the roof. Threatening noises come from both directions, but you can't put the decision off any longer.","Loot / Állapot: +10% Infekció (Rejtett)":"Effects: +10% Infection (Hidden)","A tető felé mászol (Helikopteres ág): Ugorj a 14. fejezethez.":"You climb toward the roof (Helicopter route): Go to Chapter 14.","8. FEJEZET":"CHAPTER 8","Kifulladva, vadul verő szívvel éred el az épület szűk karbantartó alagútját. A sötét csövek és vezetékek között botladozva rohansz előre, miközben fojtogató félelem szorítja a mellkasodat. Mögötted a sárgás gáz elszabaduló csápjai kúsznak a csövek mentén, ami még gyorsabb tempóra kényszerít. A tüdődet marja a dohos levegő, minden lépésnél a betonpadló hidegét érzed a talpad alatt. A szűk járat végén végre megpillantod a rozsdás fémkeretet, mely a szabadba vezet. A rozsdás vasajtót benyomva végül kijutsz a ködös, sötét és fenyegetően csendes utcára. A távolban szétlőtt autók és magukra hagyott csomagok hevernek az aszfalton.":"Out of breath, heart pounding wildly, you reach the building's narrow maintenance tunnel. You stumble forward among dark pipes and cables as a choking fear grips your chest. Behind you the runaway tendrils of yellow gas creep along the pipes, forcing you to go even faster. The musty air scorches your lungs, and with every step you feel the cold of the concrete floor beneath your soles. At the end of the narrow passage you finally spot the rusty metal frame that leads outside. Pushing open the rusty iron door, you finally emerge onto the foggy, dark and menacingly silent street. In the distance, shot-up cars and abandoned luggage lie on the asphalt.","Ugorj a 15. fejezethez.":"Go to Chapter 15.","9. FEJEZET":"CHAPTER 9","A dossziét gyorsan a kabátod alá rejtve kilépsz a folyosóra, ale a semmiből hirtelen egy torz arcú, agresszív civil fertőzött ront rád véres kézzel! Ruhája szét van tépve, szemeiben pedig tébolyult, állatias éhség ég. A roham kivédésére alig marad egyetlen másodperced.\nHarci teszt a civil ellen (Ereje: 2): Ha nyersz, kikerülöd és ugorj a 15. fejezethez. Ha veszítesz, veszítesz 2 Életerőt, ale elmenekülsz: ugorj a 15. fejezethez.":"Hiding the dossier quickly under your coat, you step out into the corridor, but out of nowhere a snarling, aggressive civilian infected with a distorted face rushes at you with bloody hands! His clothes are torn to shreds, and a frenzied, animal hunger burns in his eyes. You have barely a second to fend off the attack.\nCombat check against the civilian (Strength: 2): If you win, you dodge it and go to Chapter 15. If you lose, you lose 2 Health, but you escape: go to Chapter 15.","10. FEJEZET":"CHAPTER 10","Óvatosan oldalazva eléred a mélygarázst, ahol rábukkansz a szerkesztőség matricázott cégautójára. A garázs sötét zugaiból nyöszörgés hallatszik, ale az autó még sértetlennek tűnik. A kulcsok zsebben, az jármű indítható. Berakod a táskádat az ülésre, és felkészülsz a veszélyes útra.":"Edging carefully sideways, you reach the underground garage, where you find the newsroom's decal-covered company car. Whimpering comes from the dark corners of the garage, but the car still seems intact. The keys are in your pocket; the car can be started. You put your bag on the seat and prepare for the dangerous road.","11. FEJEZET":"CHAPTER 11","A földszinti ablakok berobbannak, a horda feltartóztathatatlanul árad be az épületbe. A lények egymást taposva tülekednek a szűk ajtórésen át. Nincs más választásod, mint elbarikádozni a lenti ajtót, és felfelé rohanni a lépcsőházban a tető irányába. A lépcsőfokok csúszósak a vértől, mögötted pedig már kaparásznak a körmök a fém korláton.":"The ground-floor windows explode inward, and the horde floods into the building. The creatures trample over one another, jostling through the narrow doorway. You have no choice but to barricade the door below and run upward through the stairwell toward the roof. The steps are slippery with blood, and behind you nails are already scraping the metal railing.","Ugorj a 14. fejezethez.":"Go to Chapter 14.","12. FEJEZET (Körgyűrű - Autó)":"CHAPTER 12 (Ring Road - Car)","A gázra lépve behajtasz a városi körgyűrűre. A motor bőgése visszhangzik a falak között, ahogy megpróbálsz utat vágni az elhagyott kocsik erdejében. A látvány kaotikus: a forgalom teljesen bedugult, a pánikba esett sofőrök egymásnak hajtva, dudálva és taposva próbálnak kijutni a városból. Az út szélén elhagyott mentőautók villognak céltalanul, a tömeg pedig kétségbeesetten rohan a kerítések felé.":"Stepping on the gas, you drive onto the city beltway. The roar of the engine echoes between the walls as you try to carve a path through a forest of abandoned cars. The sight is chaotic: traffic is completely jammed, and panicked drivers ram into each other, honking and flooring their accelerators, trying to get out of the city. Abandoned ambulances flash aimlessly at the roadside, and the crowd runs desperately toward the fences.","Megpróbálod kikerülni a dugót a szűk, sötét mellékutcákon át: Ugorj a 16. fejezethez.":"You try to bypass the jam through the narrow, dark side streets: Go to Chapter 16.","Türelmesen araszolsz a főúton a határ felé: Ugorj a 17. fejezethez.":"You inch along the main road toward the border: Go to Chapter 17.","13. FEJEZET (Csatorna - Hajó felé)":"CHAPTER 13 (Sewer - Toward the Ship)","Leereszkedsz a sötét, bűzös csatornahálózatba. A szag szinte elviselhetetlen, a levegő nehéz és nyirkos. Térdig érő, hideg, gyanús folyadékban gázolsz. A nyirkos téglafalakon furcsa, rikító színű, lüktető gombatelepek növögetnek. A víz alól időnként névtelen uszadékok és elmerült tárgyak ütköznek a lábadnak.":"You descend into the dark, stinking sewer network. The smell is almost unbearable, the air heavy and damp. You wade knee-deep in cold, suspicious liquid. Strange, garishly colored, pulsating fungal colonies grow on the clammy brick walls. From time to time, nameless flotsam and sunken objects bump against your legs from beneath the water.","Loot / Állapot: +15% Infekció (Rejtett) [ha megcsúszol]":"Effects: +15% Infection (Hidden) [if you slip]","Óvatosan, a falaktól és a gombáktól távol haladsz a sodrás közepén: Ugorj a 18. fejezethez.":"You advance carefully down the middle of the current, away from the walls and the fungi: Go to Chapter 18.","Sietsz a sötétben, és megcsúszol a fertőzött, nyálkás iszapban: +15% Infekció (Rejtett), és ugorj a 18. fejezethez.":"You hurry in the dark and slip in the infected, slimy sludge: +15% Infection (Hidden), and go to Chapter 18.","14. FEJEZET (Skyview Tető - Helikopter)":"CHAPTER 14 (Skyview Roof - Helicopter)","Kivágod a tetőre vezető nehéz ajtót, és felérsz a szeles magaslatra. Az éjszakai hideg szél azonnal az arcadba csap, miközben a város feletti füstfellegek kavarognak. A helikopter rotorjai már forognak, a pilóta integet és kiabál a nyitott ajtóból a hajtóműzajban. A leszállópálya szélén elhagyott csomagok és katonai felszerelések hevernek szétszórva.":"You kick open the heavy door to the roof and reach the windswept height. The cold night wind slaps you in the face at once, while clouds of smoke swirl above the city. The helicopter's rotors are already turning; the pilot waves and shouts from the open door over the roar of the engine. At the edge of the landing pad, abandoned luggage and military equipment lie scattered.","Loot / Állapot: +1 Információ [ha átkutatod]":"Effects: +1 Intel [if you search]","Azonnal odafutsz és beugrasz a helikopterbe: Ugorj a 19. fejezethez.":"You run straight over and jump into the helicopter: Go to Chapter 19.","Még gyorsan átkutatod a tetőtéri biztonsági irodát (+1 Információ): Ugorj a 19. fejezethez.":"You quickly search the rooftop security office first (+1 Intel): Go to Chapter 19.","15. FEJEZET (Az utca sötétje)":"CHAPTER 15 (The Dark of the Street)","Kijutottál az utcára, ahol a füst és a köd szinte teljesen elnyeli a közvilágítás maradékát. A távolban gépfegyverek száraz kopogása és robbanások morajlása rázza meg a talajt. Két fontos helyszín körvonalazódik a távolban: a Központi Gyógyszertár romjai vagy a Metró aluljáró sötét lejárója, ami a folyó felé vezethet. Választanod kell, mielőtt egy kósza fertőzött csorda rád talál.":"You've made it out onto the street, where smoke and fog swallow almost all that remains of the street lighting. In the distance the dry rattle of machine guns and the rumble of explosions shake the ground. Two landmarks take shape through the haze: the ruins of the Central Pharmacy, or the dark stairway of the Metro underpass, which may lead toward the river. You have to choose before a stray horde of the infected finds you.","A Gyógyszertár felé mész: Ugorj a 20. fejezethez.":"You head toward the Pharmacy: Go to Chapter 20.","A Metró aluljáróba ereszkedsz le: Ugorj a 13. fejezethez.":"You descend into the Metro underpass: Go to Chapter 13.","16. FEJEZET":"CHAPTER 16","A szűk, elhagyatott mellékutcákban hirtelen egy fegyveres fosztogatókból álló csapat ugrik ki az árnyékból, elállva az autód útját. Rögtönzött barikádokat emeltek elhasznált hordókból és bútorokból. Fenyegetően emelik fel csőre töltött fegyvereiket, és ordítva követelik az értékeidet.":"In the narrow, deserted side streets a band of armed looters suddenly leaps out of the shadows, blocking your car's way. They have thrown up improvised barricades of old barrels and furniture. They menacingly raise their loaded weapons and shout demands for your valuables.","Loot / Állapot: -1 Lőszer / -2 Életerő":"Effects: -1 Ammo / -2 Health","Ha Rendőr vagy és van lőszered (elhasználsz 1-et): A lövésre elrettenve elugranak, ugorj a 17. fejezethez.":"If you are a Police Officer and have ammo (spend 1): Scared off by the shot, they scatter, go to Chapter 17.","Ha nincs lőszered vagy más karakter vagy: Bekerítenek és megkopasztanak (Veszítesz 2 Életerőt), ale továbbengednek. Ugorj a 17. fejezethez.":"If you have no ammo or are another character: They surround you and rob you (you lose 2 Health), but let you through. Go to Chapter 17.","17. FEJEZET":"CHAPTER 17","Eléred az autópálya-felhajtó szakaszt. Az aszfaltot kiégett roncsok és szétszóródott lőszeres hüvelyek borítják. A távolban már világítanak a katonai ellenőrzőpont hatalmas fényszórói, és szögesdróttal lezárt kordonok látszanak. A páncélozott járművek mögött felfegyverzett katonák alakjai körvonalazódnak a reflektorfényben.":"You reach the highway ramp. The asphalt is covered with burned-out wrecks and scattered spent cartridge cases. In the distance the huge floodlights of the military checkpoint are already shining, and cordons sealed with barbed wire are visible. Behind the armored vehicles, the figures of armed soldiers take shape in the spotlight.","Ugorj az 51. fejezethez":"Go to Chapter 51.","vagy térj vissza a városba: ugorj a 15. fejezethez.":"Or return to the city: go to Chapter 15.","18. FEJEZET":"CHAPTER 18","A csatorna alagútjának végén megpillantod a folyami kompok távoli fényeit. A friss levegő éles kontrasztot alkot a föld alatti bűzzel, de a víz felszínén olajfoltok úsznak. Egy elhagyatott, rozsdás raktár létrája vezet fel a dokkok szintjére. A magasból gépek zúgása és a víz csapkodása hallatszik.":"At the end of the sewer tunnel you catch sight of the distant lights of the river ferries. The fresh air contrasts sharply with the underground stench, but oil slicks float on the surface of the water. The ladder of an abandoned, rusty warehouse leads up to the level of the docks. From above come the drone of machines and the slapping of water.","Ugorj a 71. fejezethez.":"Go to Chapter 71.","19. FEJEZET":"CHAPTER 19","A helikopter zúgva elrugaszkodik a tetőtől. A gép megbillen a szélben, ahogy szélsebesen emelkedni kezd a felhőkarcolók fölé. Ahogy magasba emelkedtek, eléd tárul a lángoló, kivilágított Grayhaven drámai képe, ami lassan zsugorodni kezd alattad. A várost borító füst tengeréből robbanások narancssárga villanásai törnek elő.":"The helicopter lifts off the roof with a roar. The aircraft tilts in the wind as it begins to climb swiftly above the skyscrapers. As you rise, the dramatic sight of burning, floodlit Grayhaven unfolds before you, slowly shrinking beneath you. From the sea of smoke covering the city, orange flashes of explosions burst out.","Ugorj a 61. fejezethez.":"Go to Chapter 61.","20. FEJEZET (Központi Gyógyszertár)":"CHAPTER 20 (Central Pharmacy)","A gyógyszertár védőrácsát felfeszítették, a kirakat üvege darabokban hever. A széttört gyógyszeres dobozok és elszórt kötszerek borítják a padlót. A sötét belső térben egy polgári túlélő, Anna lapul egy pult mögött, akinek a lábán egy csúnya, üszkösnek tűnő seb éktelenkedik. Kétségbeesetten szorít egy elmosódott képet a családjáról, miközben halkan zokog.":"The pharmacy's security grille has been pried open, the shop-window glass lies in pieces. Smashed medicine boxes and scattered bandages cover the floor. In the dark interior a civilian survivor, Anna, hides behind a counter, an ugly, gangrenous-looking wound on her leg. She clutches a blurred picture of her family and sobs quietly.","Loot / Állapot: +1 Információ, -10% Infekció / +2 Életerő":"Effects: +1 Intel, -10% Infection / +2 Health","Megosztod vele a fertőtlenítődet (ha Laborasszisztens vagy) vagy bekötözöd (+1 Információ, és csökkentheted a rejtett Infekciódat -10%-kal): Ugorj a 21. fejezethez.":"You share your disinfectant with her (if you are the Lab Assistant) or bandage her (+1 Intel, and you may reduce your hidden Infection by 10%): Go to Chapter 21.","Magára hagyod, és gyorsan átkutatod a polcokat kötszerekért (+2 Életerő gyógyulás): Ugorj a 21. fejezethez.":"You leave her and quickly search the shelves for bandages (+2 Health recovery): Go to Chapter 21.","21. FEJEZET (Kereszteződés a gyógyszertár után)":"CHAPTER 21 (Crossroads after the Pharmacy)","Kilépsz a kifosztott gyógyszertárból a füstös, hideg hajnalba. Az utca túloldalán elhagyott mentőautó villog némán. Az utca végén a Grayhaven Kórház hatalmas, sötét tömbje magasodik, ahonnan szirénázás és fegyverropogás visszhangzik. Jobbra egy katonai kordon látszik. A levegőben terjedő égett szag jelzi, hogy a város gyorsan pusztul.":"You step out of the looted pharmacy into the smoky, cold dawn. Across the street an abandoned ambulance flashes silently. At the end of the street the huge dark bulk of Grayhaven Hospital looms, from which sirens and gunfire echo. To the right a military cordon is visible. The smell of burning in the air tells you the city is dying fast.","A Kórház felé veszed az irányt: Ugorj a 22. fejezethez.":"You make for the Hospital: Go to Chapter 22.","A Katonai Ellenőrzőpont felé indulsz: Ugorj a 23. fejezethez.":"You set off toward the Military Checkpoint: Go to Chapter 23.","Meguntad a gyaloglást, és visszamész járművet keresni (Autós ág): Ugorj a 12. fejezethez.":"You've had enough of walking, and go back to look for a vehicle (Driver route): Go to Chapter 12.","22. FEJEZET (Grayhaven Kórház - Sürgősségi)":"CHAPTER 22 (Grayhaven Hospital - Emergency)","A kórház sürgősségi fogadócsarnoka leírhatatlan mészárszékre hasonlít. Felborult hordágyak, vértócsák és eldobott orvosi műszerek borítják a kövezetet. A karanténosztály vastag vasajtaja nyitva áll, és egy fertőzött ápoló vonszolja feléd a lábát véres köpenyben. Szájából sziszegő hangok törnek elő, miközben feléd nyúl élesre kopott körmeivel.\nHarci teszt az ápoló ellen (Ereje: 3): Ha Rendőr vagy és lősz (-1 Lőszer), azonnal nyersz. Ha nyersz kockával, ugorj a 24. fejezethez. Ha veszítesz, veszítesz 2 Életerőt, +10% Infekciót (Rejtett), és ugorj a 24. fejezethez.":"The hospital's emergency reception hall resembles an indescribable slaughterhouse. Overturned stretchers, pools of blood and discarded medical instruments cover the floor. The thick iron door of the quarantine ward stands open, and an infected nurse drags her legs toward you in a bloody gown. Hissing sounds burst from her mouth as she reaches for you with her jagged nails.\nCombat check against the nurse (Strength: 3): If you are a Police Officer and shoot (-1 Ammo), you win at once. If you win with the die, go to Chapter 24. If you lose, you lose 2 Health, +10% Infection (Hidden), and go to Chapter 24.","Loot / Állapot: -1 Lőszer / -2 Életerő, +10% Infekció (Rejtett)":"Effects: -1 Ammo / -2 Health, +10% Infection (Hidden)","Ugorj a 24. fejezethez.":"Go to Chapter 24.","23. FEJEZET (Katonai Kordon)":"CHAPTER 23 (Military Cordon)","Egy elhagyatott, szétlőtt katonai poszthoz érsz. A homokzsákok szétnyíltak, a földet elhagyott sisakok és gázálarcok borítják. A homokzsákok mögött fekvő halott tiszt rádiója még üzemel és sziszeg. A parancsnokság hangja a folyami evakuációt említi, de egyben teljes légtérzárat is hirdet. A recsegő adásból megtudod, hogy az utolsó hajó hamarosan kifut.":"You come to a deserted, shot-up military post. The sandbags have split open, and abandoned helmets and gas masks cover the ground. The radio of the dead officer lying behind the sandbags is still working and hissing. The voice of command mentions the river evacuation, but also announces a total airspace closure. From the crackling broadcast you learn that the last ship will soon sail.","Loot / Állapot: +1 Információ / +3 Lőszer vagy +10% Infekció (Rejtett)":"Effects: +1 Intel / +3 Ammo or +10% Infection (Hidden)","Hallgatsz a rádióadásra és jegyzetelsz: Adj hozzá +1 Információt, és ugorj a 25. fejezethez.":"You listen to the radio broadcast and take notes: Add +1 Intel, and go to Chapter 25.","Átkutatod a tiszt holttestét: Ha Rendőr vagy, adj hozzá +3 Lőszert. Minden más karakter: +10% Infekciót (Rejtett) a véres érintkezés miatt. Ugorj a 25. fejezethez.":"You search the officer's corpse: If you are a Police Officer, add +3 Ammo. Any other character: +10% Infection (Hidden) from the bloody contact. Go to Chapter 25.","24. FEJEZET":"CHAPTER 24","Az ápoló holtan terül el. A csend gyorsan visszatér a véres fogadócsarnokba. A pulton meglátsz egy orvosi mesterkulcsot, amivel eléred a szigorúan őrzött gyógyszerraktárt vagy a mentőliftet. A kulcskártya megcsillan a vészvilágítás gyenge fényében.":"The nurse lies dead. Silence quickly returns to the bloody reception hall. On the counter you spot a master medical key, with which you can reach the heavily guarded medicine store or the rescue elevator. The key card glints in the weak light of the emergency lighting.","A gyógyszerraktárba mész ellenszer után kutatni: Ugorj a 26. fejezethez.":"You go to the medicine store to look for an antidote: Go to Chapter 26.","A mentőhelikopter leszállójához mész a tetőre (Helikopteres ág): Ugorj a 14. fejezethez.":"You go to the rescue helicopter's landing pad on the roof (Helicopter route): Go to Chapter 14.","25. FEJEZET":"CHAPTER 25","A kordon mögül hirtelen egy elszabadult, páncélozott katonai dzsip gördül ki, de a vezetője magatehetetlenül borul a kormányra – a jármű egyenesen feléd száguld! A motor üvölt, a kerekek csikorognak a törmeléken. Nincs időd gondolkodni, azonnal cselekedned kell.\nFélreugrasz (Állóképesség-próba: 1D6-tal 3 vagy több kell): Ha sikerül, sértetlenül megúszod, ugorj a 27. fejezethez. Ha 1 vagy 2 a dobásod, eltalál: veszítesz 3 Életerőt, ugorj a 27. fejezethez.":"From behind the cordon a runaway armored military jeep suddenly rolls out, but its driver has slumped helplessly over the wheel – the vehicle is racing straight at you! The engine screams, the wheels screech over the debris. You have no time to think; you must act at once.\nYou leap aside (Endurance check: you need 3 or more on 1D6): If you succeed, you escape unharmed, go to Chapter 27. If your roll is 1 or 2, it hits you: you lose 3 Health, go to Chapter 27.","Loot / Állapot: -3 Életerő [ha eltalál]":"Effects: -3 Health [if it hits you]","Ugorj a 27. fejezethez.":"Go to Chapter 27.","26. FEJEZET":"CHAPTER 26","A gyógyszerraktár polcain kutatsz. Az elhagyott fiókokban orvosi fecskendők és kémcsövek hevernek szétszórva. Ha Laborasszisztens vagy, azonnal felismered a K-17 vakcina kísérleti prototípusát: csökkentheted a rejtett Infekciódat -25%-kal. Ha más karakter vagy, csak erős fertőtlenítőt találsz (-10% Infekció). A dobozokat gyorsan a táskádba rejtve felkészülsz a tovablépésre.":"You search the shelves of the medicine store. In the abandoned drawers, medical syringes and test tubes lie scattered. If you are the Lab Assistant, you immediately recognize the experimental prototype of the K-17 vaccine: you may reduce your hidden Infection by 25%. If you are another character, you only find a strong disinfectant (-10% Infection). Hiding the boxes quickly in your bag, you get ready to move on.","Loot / Állapot: -25% Infekció (Rejtett) vagy -10% Infekció (Rejtett)":"Effects: -25% Infection (Hidden) or -10% Infection (Hidden)","A hátsó alagsori kijáraton át a folyó felé indulsz: Ugorj a 13. fejezethez.":"You set off toward the river through the rear basement exit: Go to Chapter 13.","27. FEJEZET":"CHAPTER 27","A füstölgő dzsipből egy sérült katona, Vance őrmester mászik ki. Nehéz légzéssel dől a felborult jármű oldalának. Véres a vállízülete, de szorosan fog egy távcsöves puskát, és fontos hírei vannak a dokkokról. Szemeiből látszik, hogy már nem bírja sokáig segítség nélkül.":"A wounded soldier, Sergeant Vance, climbs out of the smoking jeep. He leans, breathing heavily, against the side of the overturned vehicle. His shoulder joint is bloody, but he grips a scoped rifle tightly, and he has important news about the docks. His eyes show he can't last long without help.","Loot / Állapot: +2 Információ / +2 Lőszer vagy +1 Információ":"Effects: +2 Intel / +2 Ammo or +1 Intel","Segítesz Vance-nek bekötözni a sebét: Adj hozzá +2 Információt, és ugorj a 28. fejezethez.":"You help Vance bandage his wound: Add +2 Intel, and go to Chapter 28.","Elveszed tőle a fegyvert: Ha Rendőr vagy, +2 Lőszer; ha más karakter, +1 Információ. Vance magára marad. Ugorj a 28. fejezethez.":"You take the weapon from him: If you are a Police Officer, +2 Ammo; if another character, +1 Intel. Vance is left alone. Go to Chapter 28.","28. FEJEZET":"CHAPTER 28","Vance utolsó erejével elárulja, hogy a 4-es folyami dokknál horgonyzó hajó az egyetlen esély, de a zsilipkapuk megragadtak. Megrázza a fejét, és figyelmeztet a vízi út veszélyeire is. Köhögve szorítja meg a kezedet, mielőtt összeesne.":"With his last strength Vance tells you that the ship anchored at river dock 4 is the only chance, but the lock gates are stuck. He shakes his head and warns you of the dangers of the waterway as well. Coughing, he squeezes your hand before he collapses.","Elindulsz a dokkok felé a folyóparton (Hajós ág): Ugorj a 71. fejezethez.":"You set off toward the docks along the riverbank (Ship route): Go to Chapter 71.","Inkább a városközponti autópálya felé fordulsz: Ugorj az 51. fejezethez.":"You turn toward the downtown highway instead: Go to Chapter 51.","Loot / Állapot: +2 Információ, +15% Infekció (Rejtett)":"Effects: +2 Intel, +15% Infection (Hidden)","Loot / Állapot: +1 Információ":"Effects: +1 Intel","Ugorj az 51. fejezethez.":"Go to Chapter 51.","GAME OVER – Elhunytál":"GAME OVER – You have died","A sebeid túl súlyosak. Grayhaven utolsó 12 órája számodra itt véget ér.":"Your wounds are too severe. Grayhaven's last 12 hours end here for you.","Szolgálati fegyver":"Service pistol","Golyóálló mellény":"Bulletproof vest","Belépőkártya":"Access card","Fertőtlenítő":"Disinfectant","Sajtóigazolvány":"Press pass","Zseblámpa":"Flashlight","Rendőr":"Police Officer","Újságíró":"Journalist","Kulcskártya":"Key card","nincs lőszered":"you have no ammo","civil fertőzött":"civilian infected","fertőzött ápoló":"infected nurse","Félreugrás a dzsip elől (Állóképesség)":"Dodging the jeep (Endurance)","őr":"guard","Életerő":"Health","Lőszer":"Ammo","Infekció":"Infection","Információ":"Intel","Ügyesség":"Agility","Tárgy: ":"Item: ","⚔ HARC: ":"⚔ COMBAT: "," <small>(Ereje: ":" <small>(Strength: ","Te: 1D6 + ":"You: 1D6 + "," (Harcérték) &nbsp;|&nbsp; Ellenfél: 1D6 + ":" (Combat) &nbsp;|&nbsp; Enemy: 1D6 + ","🎲 Dobok!":"🎲 Roll!","🔫 Lőszert használok (−":"🔫 Use Ammo (−",") – biztos győzelem":") – guaranteed win","🔫 Lövés! −":"🔫 Shot! −"," Lőszer – az ellenfél elesik.":" Ammo – the enemy goes down.","<div class=\"lbl\">Te</div>":"<div class=\"lbl\">You</div>","Te: ":"You: ","</b> &nbsp;|&nbsp; Ellenfél: ":"</b> &nbsp;|&nbsp; Enemy: ","✔ Te találtál be – győzelem!":"✔ You land the hit – victory!","✘ Döntetlen – az ellenfél visz be egy ütést!":"✘ Tie – the enemy lands a blow!","✘ Az ellenfél talált be!":"✘ The enemy landed a hit!","🎲 PRÓBA: ":"🎲 CHECK: "," szükséges":" required"," (Ügyesség)":" (Agility)","Dobás: ":"Roll: ","✔ Sikerült!":"✔ Success!","✘ Nem sikerült!":"✘ Failed!","…elájulsz":"…you pass out","Tovább ▶":"Continue ▶","Utolsó helyszín: ":"Last location: chapter ",". fejezet · ":"· ","(Ezt a helyet már átkutattad.)":"(You have already searched this place.)","Újra próbálod ▶":"Try again ▶","Biztosan új játékot kezdesz? A jelenlegi állás elvész.":"Are you sure you want to start a new game? Your current progress will be lost.","▶ Folytatás (":"▶ Continue (chapter ","Laborasszisztens":"Lab Assistant","Tablet":"Tablet","Diktafon":"Voice recorder","A csatornák felé indulsz (Hajós ág): Ugorj a 13. fejezethez.":"You head toward the sewers (Ship route): Go to Chapter 13.","DEMO VERZIÓ — ingyenes részlet a teljes játékból":"DEMO VERSION — a free excerpt from the full game","DEMO":"DEMO","DEMO VÉGE":"END OF THE DEMO","Lapozós Kalandkönyv":"Gamebook","A kereszteződés után a város egyre mélyebbre húz. A hajnal még messze van, a kordon mögött lövések dörrennek, és az Infekciód minden lépéssel csendben kúszik fölfelé.\n\nItt ér véget a DEMO. A teljes játékban további több mint kilencven fejezet, a Rádiótorony, a Metró, a Feketepiaci Bunker és a menekülés végső döntései várnak.\n\nA teljes játék hamarosan megjelenik.":"Beyond the crossing, the city pulls you deeper. Dawn is still far away, gunfire cracks behind the cordon, and with every step your Infection quietly creeps higher.\n\nThe DEMO ends here. The full game holds over ninety more chapters, the Radio Tower, the Metro, the Black Market Bunker and the final decisions of the escape.\n\nThe full game is coming soon."};
+function __grayhaven(LANG){
+  function T(s){return LANG==='en'&&Object.prototype.hasOwnProperty.call(__DICT,s)?__DICT[s]:s}
+  document.documentElement.lang=LANG;
+  if(LANG==='en'){
+    document.title='GRAYHAVEN: THE LAST 12 HOURS — DEMO';
+    var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:function(n){var p=n.parentNode&&n.parentNode.nodeName;return(p==='SCRIPT'||p==='STYLE')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT}}),n,list=[];
+    while((n=w.nextNode()))list.push(n);
+    list.forEach(function(n){var t=n.nodeValue.trim();if(t&&Object.prototype.hasOwnProperty.call(__DICT,t))n.nodeValue=n.nodeValue.replace(t,function(){return __DICT[t]})});
+  }
+  
+// ===== GRAYHAVEN – automatizált játékmechanika =====
+(function(){
+const FAST = !!window.__GH_FAST;
+const CLASSES = {
+  'Rendőr':{hp:12,atk:3,ammo:12,inf:0,info:1,items:['Szolgálati fegyver','Golyóálló mellény']},
+  'Laborasszisztens':{hp:8,atk:0,ammo:0,inf:0,info:4,items:['Belépőkártya','Tablet','Fertőtlenítő']},
+  'Újságíró':{hp:9,atk:1,ammo:0,inf:0,info:3,items:['Diktafon','Sajtóigazolvány','Zseblámpa']}
+};
+let s = {cls:null};
+let cur = 1;
+const SAVE_KEY=LANG==='en'?'grayhaven_demo_save_v1_en':'grayhaven_demo_save_v1';
+
+const cop=s=>s.cls==='Rendőr', lab=s=>s.cls==='Laborasszisztens', jour=s=>s.cls==='Újságíró';
+const hasCard=s=>(s.items||[]).some(i=>i==='Belépőkártya'||i==='Kulcskártya');
+const copAmmoElseInfo=(a,i)=>s=>cop(s)?[['ammo',a]]:[['info',i]];
+
+// ---------- fejezet-konfiguráció ----------
+const CH = {
+  1:{choices:[{run:()=>start('Rendőr')},{run:()=>start('Laborasszisztens')},{run:()=>start('Újságíró')}]},
+  2:{choices:[{req:s=>s.ammo>=1,why:T('nincs lőszered'),fx:[['ammo',-1]]},{}]},
+  3:{choices:[{fx:[['info',2],['inf',15]]},{fx:[['hp',-1]]}]},
+  4:{choices:[{fx:[['info',2]]},{}]},
+  5:{enter:[['item','Kulcskártya']]},
+  7:{enter:[['inf',10]]},
+  9:{combat:{name:T('civil fertőzött'),power:2,lose:[['hp',-2]],to:15}},
+  13:{choices:[{},{fx:[['inf',15]]}]},
+  14:{choices:[{},{fx:[['info',1]]}]},
+  16:{choices:[
+      {req:s=>cop(s)&&s.ammo>=1,hide:true,fx:[['ammo',-1]]},
+      {req:s=>!(cop(s)&&s.ammo>=1),hide:true,fx:[['hp',-2]]}]},
+  20:{choices:[{fx:[['info',1],['inf',-10]]},{fx:[['hp',2]]}]},
+  22:{combat:{name:T('fertőzött ápoló'),power:3,ammo:1,lose:[['hp',-2],['inf',10]],to:24}},
+  23:{choices:[{fx:[['info',1]]},{fx:s=>cop(s)?[['ammo',3]]:[['inf',10]]}]},
+  25:{check:{label:T('Félreugrás a dzsip elől (Állóképesség)'),min:3,lose:[['hp',-3]],to:27}},
+  26:{enter:s=>lab(s)?[['inf',-25]]:[['inf',-10]]},
+  27:{choices:[{fx:[['info',2]]},{fx:copAmmoElseInfo(2,1)}]},
+};
+
+// ---------- állapot ----------
+function start(cls){
+  const c=CLASSES[cls];
+  s={cls,hp:c.hp,maxhp:c.hp,atk:c.atk,ammo:c.ammo,inf:c.inf,info:c.info,agi:0,items:c.items.slice(),visited:{}};
+}
+function save(){ try{ localStorage.setItem(SAVE_KEY,JSON.stringify({s,cur})); }catch(e){} }
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+function loadSave(){ try{ const j=JSON.parse(localStorage.getItem(SAVE_KEY)||'null'); return (j&&j.s&&j.s.cls&&j.s.hp>0)?j:null; }catch(e){ return null; } }
+
+const NAMES={hp:T('Életerő'),ammo:T('Lőszer'),inf:T('Infekció'),info:T('Információ'),agi:T('Ügyesség')};
+function apply(fx){
+  if(typeof fx==='function') fx=fx(s);
+  const out=[];
+  for(const [k,v] of (fx||[])){
+    if(k==='item'){ if(!s.items.includes(v)){ s.items.push(v); out.push(T('Tárgy: ')+T(v));} continue; }
+    const before=s[k];
+    let nv=before+v;
+    if(k==='hp') nv=Math.min(nv,s.maxhp);
+    if(k==='ammo'||k==='inf'||k==='info'||k==='hp') nv=Math.max(0,nv);
+    s[k]=nv;
+    const d=nv-before;
+    if(d!==0) out.push(`${NAMES[k]} ${d>0?'+':'−'}${Math.abs(d)}${k==='inf'?'%':''}`);
+  }
+  hud(); return out;
+}
+
+// ---------- UI segédek ----------
+const $=id=>document.getElementById(id);
+function card(n){ return $('chap-'+n) || $('chap-demo'); }
+function hud(){
+  const h=$('hud');
+  if(!s.cls){ h.style.display='none'; document.body.classList.remove('has-hud'); return; }
+  h.style.display='flex'; document.body.classList.add('has-hud');
+  $('h-cls').textContent=T(s.cls);
+  $('h-hp').textContent=s.hp+'/'+s.maxhp;
+  $('h-ammo').textContent=s.ammo;
+  $('h-inf').textContent=s.inf+'%';
+  $('h-info').textContent=s.info;
+  $('h-atk').textContent='+'+s.atk;
+  $('h-agi').textContent=s.agi;
+  $('h-items').textContent=s.items.map(T).join(', ');
+  $('h-hpbox').classList.toggle('low',s.hp<=Math.ceil(s.maxhp/3));
+  $('h-infbox').classList.toggle('high',s.inf>=60);
+}
+let toastT=null;
+function toast(list){
+  if(!list.length) return;
+  const t=$('toast'); t.textContent=list.join(' · '); t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),FAST?50:2600);
+}
+function sleep(ms){ return new Promise(r=>setTimeout(r,FAST?0:ms)); }
+function mkDie(){ const d=document.createElement('div'); d.className='die'; for(let i=0;i<9;i++) d.appendChild(document.createElement('i')); return d; }
+const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function setDie(d,n){ d.dataset.v=n; [...d.children].forEach((c,i)=>c.className=PIPS[n].includes(i)?'p':''); }
+async function rollDie(d){
+  const v=1+Math.floor(Math.random()*6);
+  if(!FAST){ d.classList.add('rolling'); for(let k=0;k<11;k++){ setDie(d,1+Math.floor(Math.random()*6)); await sleep(70); } d.classList.remove('rolling'); }
+  setDie(d,v); return v;
+}
+function flowPanel(n){
+  const c=card(n); let f=c.querySelector('.flow');
+  if(!f){ f=document.createElement('div'); f.className='flow'; c.appendChild(f); }
+  f.innerHTML=''; f.style.display='block'; return f;
+}
+function choose(f,opts){
+  return new Promise(res=>{
+    let bx=f.querySelector('.flow-btns'); if(!bx){ bx=document.createElement('div'); bx.className='flow-btns'; f.appendChild(bx); }
+    bx.innerHTML='';
+    opts.forEach(o=>{ const b=document.createElement('button'); b.className='choice-btn'; b.textContent=o.t; b.dataset.k=o.k;
+      b.onclick=()=>{ bx.innerHTML=''; res(o.k); }; bx.appendChild(b); });
+  });
+}
+function line(f,html,cls){ const d=document.createElement('div'); d.className=cls||'flow-line'; d.innerHTML=html; f.insertBefore(d,f.querySelector('.flow-btns')); return d; }
+
+// ---------- harc ----------
+async function doCombat(n,c){
+  const f=flowPanel(n);
+  const bonus=Math.floor(c.power/2);
+  line(f,(T("⚔ HARC: ")+(c.name)+T(" <small>(Ereje: ")+(c.power)+")</small>"),'flow-title');
+  line(f,(T("Te: 1D6 + ")+(s.atk)+T(" (Harcérték) &nbsp;|&nbsp; Ellenfél: 1D6 + ")+(bonus)),'flow-sub');
+  const opts=[{k:'roll',t:T('🎲 Dobok!')}];
+  const cost=c.ammo||1;
+  if(!c.noAmmo && s.ammo>=cost) opts.push({k:'ammo',t:(T("🔫 Lőszert használok (−")+(cost)+T(") – biztos győzelem"))});
+  const k=await choose(f,opts);
+  let win;
+  if(k==='ammo'){
+    apply([['ammo',-cost]]); win=true;
+    line(f,(T("🔫 Lövés! −")+(cost)+T(" Lőszer – az ellenfél elesik.")),'flow-ok');
+  } else {
+    const row=document.createElement('div'); row.className='dice-row';
+    row.innerHTML=T('<div class="lbl">Te</div>'); const d1=mkDie(); setDie(d1,1); row.appendChild(d1);
+    const vs=document.createElement('div'); vs.className='lbl'; vs.textContent='vs'; row.appendChild(vs);
+    const d2=mkDie(); setDie(d2,1); row.appendChild(d2); const l2=document.createElement('div'); l2.className='lbl'; l2.textContent=c.name; row.appendChild(l2);
+    f.insertBefore(row,f.querySelector('.flow-btns'));
+    const [a,b]=await Promise.all([rollDie(d1),rollDie(d2)]);
+    const me=a+s.atk, en=b+bonus; win=me>en;
+    line(f,(T("Te: ")+(a)+" + "+(s.atk)+" = <b>"+(me)+T("</b> &nbsp;|&nbsp; Ellenfél: ")+(b)+" + "+(bonus)+" = <b>"+(en)+"</b>"));
+    line(f,win?T('✔ Te találtál be – győzelem!'):(me===en?T('✘ Döntetlen – az ellenfél visz be egy ütést!'):T('✘ Az ellenfél talált be!')),win?'flow-ok':'flow-bad');
+  }
+  if(c.forced){ line(f,c.forcedText||'',`flow-bad`); }
+  else {
+    const out=apply(win?(c.win||[]):(c.lose||[]));
+    if(out.length) line(f,out.join(' · '),win?'flow-ok':'flow-bad');
+  }
+  return {win};
+}
+// ---------- próba ----------
+async function doCheck(n,c){
+  const f=flowPanel(n);
+  const bonus=s.agi;
+  line(f,(T("🎲 PRÓBA: ")+(c.label)),'flow-title');
+  line(f,("1D6"+(bonus?(" + "+(bonus)+T(" (Ügyesség)")):'')+" ≥ "+(c.min)+T(" szükséges")),'flow-sub');
+  await choose(f,[{k:'roll',t:T('🎲 Dobok!')}]);
+  const row=document.createElement('div'); row.className='dice-row';
+  const d=mkDie(); setDie(d,1); row.appendChild(d); f.insertBefore(row,f.querySelector('.flow-btns'));
+  const v=await rollDie(d); const tot=v+bonus; const win=tot>=c.min;
+  line(f,(T("Dobás: ")+(v)+(bonus?` + ${bonus} = <b>${tot}</b>`:'')));
+  line(f,win?T('✔ Sikerült!'):T('✘ Nem sikerült!'),win?'flow-ok':'flow-bad');
+  const out=apply(win?(c.win||[]):(c.lose||[]));
+  if(out.length) line(f,out.join(' · '),win?'flow-ok':'flow-bad');
+  return {win};
+}
+async function proceed(n,f,dest){
+  if(s.hp<=0){ await choose(f,[{k:'x',t:T('…elájulsz')}]); return die(); }
+  await choose(f,[{k:'go',t:T('Tovább ▶')}]);
+  go(dest);
+}
+
+// ---------- navigáció ----------
+function showOnly(el){ document.querySelectorAll('.chapter-card').forEach(c=>c.classList.remove('active')); el.classList.add('active'); window.scrollTo({top:0,behavior:FAST?'auto':'smooth'}); }
+function die(){
+  clearSave(); showOnly($('chap-dead'));
+  $('dead-info').textContent=(T("Utolsó helyszín: ")+(cur)+T(". fejezet · ")+(T(s.cls||'')));
+  document.body.dataset.cur='dead';
+}
+function restart(){ clearSave(); s={cls:null}; $('resume').style.display='none'; go(1); }
+function parseDest(btn){ const m=/chap-(\d+)/.exec(btn.dataset.dest||''); return m?+m[1]:null; }
+
+function go(n){
+  cur=n; document.body.dataset.cur=n;
+  const c=card(n); if(!c) return;
+  showOnly(c); $('resume').style.display='none';
+  const cfg=CH[n]||{};
+  const first=!s.visited||!s.visited[n];
+  if(s.cls&&s.visited) s.visited[n]=true;
+  // régi automatikus sorok törlése
+  c.querySelectorAll('.autofx,.flow').forEach(e=>e.remove());
+  const choicesBox=c.querySelector('.choices');
+  if(choicesBox) choicesBox.style.display='';
+  // automatikus hatások
+  let info=[];
+  if(cfg.enter && first){ const out=apply(cfg.enter); if(out.length){ info.push(out.join(' · ')); toast(out); } }
+  if(cfg.enter && !first) info.push(T('(Ezt a helyet már átkutattad.)'));
+  if(cfg.note) info.push(cfg.note(s));
+  if(info.length){ const d=document.createElement('div'); d.className='autofx'; d.textContent='⚙ '+info.join('   '); const ch=c.querySelector('.choices'); if(ch) ch.before(d); else c.appendChild(d); }
+  hud();
+  // halál
+  if(s.cls && s.hp<=0){ return die(); }
+  // gombok
+  const btns=[...c.querySelectorAll('.choice-btn')];
+  btns.forEach((b,j)=>{
+    const cc=(cfg.choices&&cfg.choices[j])||{};
+    b.style.display=''; b.disabled=false; b.classList.remove('disabled');
+    const old=b.querySelector('.why'); if(old) old.remove();
+    if(cc.req && !cc.req(s)){
+      if(cc.hide){ b.style.display='none'; }
+      else { b.disabled=true; b.classList.add('disabled'); if(cc.why){ const w=document.createElement('span'); w.className='why'; w.textContent=' ['+cc.why+']'; b.appendChild(w);} }
+    }
+  });
+  // vég-fejezet: nincs gomb → újrakezdés
+  if(!btns.length && n!==dead){
+    const bx=choicesBox||c.appendChild(Object.assign(document.createElement('div'),{className:'choices'}));
+    if(!bx.querySelector('.restart')){ const b=document.createElement('button'); b.className='choice-btn restart'; b.textContent=T('↻ Új játék'); b.onclick=restart; bx.appendChild(b); }
+    clearSave();
+  } else save();
+  // fejezet-szintű automatika
+  if(cfg.combat||cfg.check){
+    if(choicesBox) choicesBox.style.display='none';
+    (async()=>{
+      const f=flowPanel(n);
+      if(cfg.combat){
+        const r=await doCombat(n,cfg.combat);
+        await proceed(n,f,cfg.combat.to);
+      } else {
+        const r=await doCheck(n,cfg.check);
+        await proceed(n,f,r.win&&cfg.check.toWin?cfg.check.toWin:(!r.win&&cfg.check.toLose?cfg.check.toLose:cfg.check.to));
+      }
+    })();
+  }
+}
+const dead='dead';
+
+async function onChoice(n,j,btn){
+  const cfg=(CH[n]&&CH[n].choices&&CH[n].choices[j])||{};
+  const dest=parseDest(btn);
+  if(cfg.run) cfg.run();
+  const c=card(n);
+  if(cfg.combat||cfg.check){
+    c.querySelector('.choices').style.display='none';
+    if(cfg.fx){ const o=apply(cfg.fx); toast(o); }
+    const f=flowPanel(n);
+    if(cfg.combat){
+      const r=await doCombat(n,cfg.combat);
+      if(cfg.combat.stay){
+        if(s.hp<=0){ await choose(f,[{k:'x',t:T('…elájulsz')}]); return die(); }
+        if(r.win){ await choose(f,[{k:'go',t:T('Tovább ▶')}]); return go(dest); }
+        await choose(f,[{k:'x',t:T('Újra próbálod ▶')}]); return go(n);
+      }
+    } else { await doCheck(n,cfg.check); }
+    return proceed(n,f,dest);
+  }
+  if(cfg.fx){ const o=apply(cfg.fx); toast(o); }
+  if(s.hp<=0) return die();
+  go(dest);
+}
+
+// ---------- inicializálás ----------
+function init(){
+  document.querySelectorAll('.chapter-card').forEach(c=>{
+    const n=+c.id.replace('chap-','');
+    [...c.querySelectorAll('.choice-btn')].forEach((b,j)=>{
+      const m=/chap-(\d+)/.exec(b.getAttribute('onclick')||'');
+      if(m) b.dataset.dest='chap-'+m[1];
+      b.removeAttribute('onclick');
+      b.addEventListener('click',()=>{ if(b.disabled||b.classList.contains('restart')) return; onChoice(n,j,b); });
+    });
+  });
+  $('btn-new').onclick=()=>{ if(confirm(T('Biztosan új játékot kezdesz? A jelenlegi állás elvész.'))) restart(); };
+  $('dead-new').onclick=restart;
+  const sv=loadSave();
+  if(sv && sv.cur>1){
+    $('resume').style.display='block';
+    $('resume-go').textContent=(T("▶ Folytatás (")+(sv.cur)+T(". fejezet · ")+(T(sv.s.cls))+")");
+    $('resume-go').onclick=()=>{ s=sv.s; hud(); go(sv.cur); };
+  }
+  hud();
+  window.__gh={get s(){return s;},set s(v){s=v;},go,restart,CH,start};
+}
+window.goToChap=function(id){ const m=/chap-(\d+)/.exec(id); if(m) go(+m[1]); };
+window.toggleRules=function(){ const r=$('rules-content'); r.style.display=(r.style.display==='block')?'none':'block'; };
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+
+
+}
+(function(){
+  var m=/[?&]lang=(en|hu)/.exec(location.search);
+  var box=document.getElementById('langsel');
+  function go(l){box.hidden=true;__grayhaven(l)}
+  if(m){box.hidden=true;__grayhaven(m[1]);return}
+  box.hidden=false;
+  box.addEventListener('click',function(e){var b=e.target.closest('[data-l]');if(b)go(b.getAttribute('data-l'))});
+})();
+</script>
+
+</body>
+</html>
